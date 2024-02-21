@@ -407,7 +407,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         cache.pop('version')  # remove version
         labels, shapes, self.segments = zip(*cache.values())
         self.labels = list(labels)
-        self.shapes = np.array(shapes, dtype=np.float64)
+        self.shapes = np.array(shapes, dtype=float64)
         self.img_files = list(cache.keys())  # update
         self.label_files = img2label_paths(cache.keys())  # update
         if single_cls:
@@ -415,7 +415,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                 x[:, 0] = 0
 
         n = len(shapes)  # number of images
-        bi = np.floor(np.arange(n) / batch_size).astype(np.int)  # batch index
+        bi = np.floor(np.arange(n) / batch_size).astype(int)  # batch index
         nb = bi[-1] + 1  # number of batches
         self.batch = bi  # batch index of image
         self.n = n
@@ -443,7 +443,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                 elif mini > 1:
                     shapes[i] = [1, 1 / mini]
 
-            self.batch_shapes = np.ceil(np.array(shapes) * img_size / stride + pad).astype(np.int) * stride
+            self.batch_shapes = np.ceil(np.array(shapes) * img_size / stride + pad).astype(int) * stride
 
         # Cache images into memory for faster training (WARNING: large datasets may exceed system RAM)
         self.imgs = [None] * n
@@ -488,10 +488,10 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                     with open(lb_file, 'r') as f:
                         l = [x.split() for x in f.read().strip().splitlines()]
                         if any([len(x) > 8 for x in l]):  # is segment
-                            classes = np.array([x[0] for x in l], dtype=np.float32)
-                            segments = [np.array(x[1:], dtype=np.float32).reshape(-1, 2) for x in l]  # (cls, xy1...)
+                            classes = np.array([x[0] for x in l], dtype=float32)
+                            segments = [np.array(x[1:], dtype=float32).reshape(-1, 2) for x in l]  # (cls, xy1...)
                             l = np.concatenate((classes.reshape(-1, 1), segments2boxes(segments)), 1)  # (cls, xywh)
-                        l = np.array(l, dtype=np.float32)
+                        l = np.array(l, dtype=float32)
                     if len(l):
                         assert l.shape[1] == 5, 'labels require 5 columns each'
                         assert (l >= 0).all(), 'negative labels'
@@ -499,10 +499,10 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                         assert np.unique(l, axis=0).shape[0] == l.shape[0], 'duplicate labels'
                     else:
                         ne += 1  # label empty
-                        l = np.zeros((0, 5), dtype=np.float32)
+                        l = np.zeros((0, 5), dtype=float32)
                 else:
                     nm += 1  # label missing
-                    l = np.zeros((0, 5), dtype=np.float32)
+                    l = np.zeros((0, 5), dtype=float32)
                 x[im_file] = [l, shape, segments]
             except Exception as e:
                 nc += 1
@@ -551,7 +551,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                 else:
                     img2, labels2 = load_mosaic9(self, random.randint(0, len(self.labels) - 1))
                 r = np.random.beta(8.0, 8.0)  # mixup ratio, alpha=beta=8.0
-                img = (img * r + img2 * (1 - r)).astype(np.uint8)
+                img = (img * r + img2 * (1 - r)).astype(uint8)
                 labels = np.concatenate((labels, labels2), 0)
 
         else:
@@ -685,7 +685,7 @@ def augment_hsv(img, hgain=0.5, sgain=0.5, vgain=0.5):
     hue, sat, val = cv2.split(cv2.cvtColor(img, cv2.COLOR_BGR2HSV))
     dtype = img.dtype  # uint8
 
-    x = np.arange(0, 256, dtype=np.int16)
+    x = np.arange(0, 256, dtype=int16)
     lut_hue = ((x * r[0]) % 180).astype(dtype)
     lut_sat = np.clip(x * r[1], 0, 255).astype(dtype)
     lut_val = np.clip(x * r[2], 0, 255).astype(dtype)
@@ -718,7 +718,7 @@ def load_mosaic(self, index):
 
         # place img in img4
         if i == 0:  # top left
-            img4 = np.full((s * 2, s * 2, img.shape[2]), 114, dtype=np.uint8)  # base image with 4 tiles
+            img4 = np.full((s * 2, s * 2, img.shape[2]), 114, dtype=unint8)  # base image with 4 tiles
             x1a, y1a, x2a, y2a = max(xc - w, 0), max(yc - h, 0), xc, yc  # xmin, ymin, xmax, ymax (large image)
             x1b, y1b, x2b, y2b = w - (x2a - x1a), h - (y2a - y1a), w, h  # xmin, ymin, xmax, ymax (small image)
         elif i == 1:  # top right
@@ -776,7 +776,7 @@ def load_mosaic9(self, index):
 
         # place img in img9
         if i == 0:  # center
-            img9 = np.full((s * 3, s * 3, img.shape[2]), 114, dtype=np.uint8)  # base image with 4 tiles
+            img9 = np.full((s * 3, s * 3, img.shape[2]), 114, dtype=unint8)  # base image with 4 tiles
             h0, w0 = h, w
             c = s, s, s + w, s + h  # xmin, ymin, xmax, ymax (base) coordinates
         elif i == 1:  # top
@@ -853,7 +853,7 @@ def load_samples(self, index):
 
         # place img in img4
         if i == 0:  # top left
-            img4 = np.full((s * 2, s * 2, img.shape[2]), 114, dtype=np.uint8)  # base image with 4 tiles
+            img4 = np.full((s * 2, s * 2, img.shape[2]), 114, dtype=unint8)  # base image with 4 tiles
             x1a, y1a, x2a, y2a = max(xc - w, 0), max(yc - h, 0), xc, yc  # xmin, ymin, xmax, ymax (large image)
             x1b, y1b, x2b, y2b = w - (x2a - x1a), h - (y2a - y1a), w, h  # xmin, ymin, xmax, ymax (small image)
         elif i == 1:  # top right
@@ -896,7 +896,7 @@ def copy_paste(img, labels, segments, probability=0.5):
     n = len(segments)
     if probability and n:
         h, w, c = img.shape  # height, width, channels
-        im_new = np.zeros(img.shape, np.uint8)
+        im_new = np.zeros(img.shape, unint8)
         for j in random.sample(range(n), k=round(probability * n)):
             l, s = labels[j], segments[j]
             box = w - l[3], l[2], w - l[1], l[4]
@@ -904,7 +904,7 @@ def copy_paste(img, labels, segments, probability=0.5):
             if (ioa < 0.30).all():  # allow 30% obscuration of existing labels
                 labels = np.concatenate((labels, [[l[0], *box]]), 0)
                 segments.append(np.concatenate((w - s[:, 0:1], s[:, 1:2]), 1))
-                cv2.drawContours(im_new, [segments[j].astype(np.int32)], -1, (255, 255, 255), cv2.FILLED)
+                cv2.drawContours(im_new, [segments[j].astype(int32)], -1, (255, 255, 255), cv2.FILLED)
 
         result = cv2.bitwise_and(src1=img, src2=im_new)
         result = cv2.flip(result, 1)  # augment segments (flip left-right)
@@ -919,10 +919,10 @@ def remove_background(img, labels, segments):
     # Implement Copy-Paste augmentation https://arxiv.org/abs/2012.07177, labels as nx5 np.array(cls, xyxy)
     n = len(segments)
     h, w, c = img.shape  # height, width, channels
-    im_new = np.zeros(img.shape, np.uint8)
-    img_new = np.ones(img.shape, np.uint8) * 114
+    im_new = np.zeros(img.shape, unint8)
+    img_new = np.ones(img.shape, unint8) * 114
     for j in range(n):
-        cv2.drawContours(im_new, [segments[j].astype(np.int32)], -1, (255, 255, 255), cv2.FILLED)
+        cv2.drawContours(im_new, [segments[j].astype(int32)], -1, (255, 255, 255), cv2.FILLED)
 
         result = cv2.bitwise_and(src1=img, src2=im_new)
         
@@ -950,9 +950,9 @@ def sample_segments(img, labels, segments, probability=0.5):
             
             sample_labels.append(l[0])
             
-            mask = np.zeros(img.shape, np.uint8)
+            mask = np.zeros(img.shape, unint8)
             
-            cv2.drawContours(mask, [segments[j].astype(np.int32)], -1, (255, 255, 255), cv2.FILLED)
+            cv2.drawContours(mask, [segments[j].astype(int32)], -1, (255, 255, 255), cv2.FILLED)
             sample_masks.append(mask[box[1]:box[3],box[0]:box[2],:])
             
             result = cv2.bitwise_and(src1=img, src2=mask)
@@ -1151,7 +1151,7 @@ def cutout(image, labels):
 
         # return unobscured labels
         if len(labels) and s > 0.03:
-            box = np.array([xmin, ymin, xmax, ymax], dtype=np.float32)
+            box = np.array([xmin, ymin, xmax, ymax], dtype=float32)
             ioa = bbox_ioa(box, labels[:, 1:5])  # intersection over area
             labels = labels[ioa < 0.60]  # remove >60% obscured labels
 
@@ -1176,7 +1176,7 @@ def pastein(image, labels, sample_labels, sample_images, sample_masks):
         xmax = min(w, xmin + mask_w)
         ymax = min(h, ymin + mask_h)   
         
-        box = np.array([xmin, ymin, xmax, ymax], dtype=np.float32)
+        box = np.array([xmin, ymin, xmax, ymax], dtype=float32)
         if len(labels):
             ioa = bbox_ioa(box, labels[:, 1:5])  # intersection over area     
         else:
@@ -1200,12 +1200,12 @@ def pastein(image, labels, sample_labels, sample_images, sample_masks):
                 r_image = cv2.resize(sample_images[sel_ind], (r_w, r_h))
                 temp_crop = image[ymin:ymin+r_h, xmin:xmin+r_w]
                 m_ind = r_mask > 0
-                if m_ind.astype(np.int).sum() > 60:
+                if m_ind.astype(int).sum() > 60:
                     temp_crop[m_ind] = r_image[m_ind]
                     #print(sample_labels[sel_ind])
                     #print(sample_images[sel_ind].shape)
                     #print(temp_crop.shape)
-                    box = np.array([xmin, ymin, xmin+r_w, ymin+r_h], dtype=np.float32)
+                    box = np.array([xmin, ymin, xmin+r_w, ymin+r_h], dtype=float32)
                     if len(labels):
                         labels = np.concatenate((labels, [[sample_labels[sel_ind], *box]]), 0)
                     else:
@@ -1272,7 +1272,7 @@ def extract_boxes(path='../coco/'):  # from utils.datasets import *; extract_box
             lb_file = Path(img2label_paths([str(im_file)])[0])
             if Path(lb_file).exists():
                 with open(lb_file, 'r') as f:
-                    lb = np.array([x.split() for x in f.read().strip().splitlines()], dtype=np.float32)  # labels
+                    lb = np.array([x.split() for x in f.read().strip().splitlines()], dtype=float32)  # labels
 
                 for j, x in enumerate(lb):
                     c = int(x[0])  # class
@@ -1283,7 +1283,7 @@ def extract_boxes(path='../coco/'):  # from utils.datasets import *; extract_box
                     b = x[1:] * [w, h, w, h]  # box
                     # b[2:] = b[2:].max()  # rectangle to square
                     b[2:] = b[2:] * 1.2 + 3  # pad
-                    b = xywh2xyxy(b.reshape(-1, 4)).ravel().astype(np.int)
+                    b = xywh2xyxy(b.reshape(-1, 4)).ravel().astype(int)
 
                     b[[0, 2]] = np.clip(b[[0, 2]], 0, w)  # clip boxes outside of image
                     b[[1, 3]] = np.clip(b[[1, 3]], 0, h)
